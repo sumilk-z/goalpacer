@@ -1,0 +1,106 @@
+.logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.page-header p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+}
+
+.stat-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.priority-1 {
+  background: #ff4d4f;
+  color: white;
+}
+
+.priority-2 {
+  background: #ff7a45;
+  color: white;
+}
+
+.priority-3 {
+  background: #ffa940;
+  color: white;
+}
+
+.priority-4 {
+  background: #52c41a;
+  color: white;
+}
+
+.priority-5 {
+  background: #1890ff;
+  color: white;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.status-active {
+  background: #52c41a;
+  color: white;
+}
+
+.status-completed {
+  background: #1890ff;
+  color: white;
+}
+
+.status-archived {
+  background: #d9d9d9;
+  color: #666;
+}
+
+.status-pending {
+  background: #faad14;
+  color: white;
+}
