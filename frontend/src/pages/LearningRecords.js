@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Card, Button, Dialog, Form, Input, Select, Tag, Space, MessagePlugin,
-  Row, Col, Pagination, Radio, List, Spin
+  Card, Button, Dialog, Form, Input, Select, Space, MessagePlugin,
+  Row, Col, Pagination, Radio, List, Loading
 } from 'tdesign-react';
 import { AddIcon, FilterIcon, SwapIcon } from 'tdesign-icons-react';
 import dayjs from 'dayjs';
 import { logAPI, goalAPI } from '../services/api';
 
 const { FormItem } = Form;
-const { ListItem, ListItemMeta } = List;
+const { ListItem } = List;
 
 const LearningRecords = () => {
   const [records, setRecords] = useState([]);
@@ -26,7 +26,7 @@ const LearningRecords = () => {
   const [filterGoal, setFilterGoal] = useState('all');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(3);
+  const pageSize = 3;
 
   // 初始化：加载数据
   useEffect(() => {
@@ -213,7 +213,7 @@ const LearningRecords = () => {
       </Card>
 
       {/* 记录列表 */}
-      <Spin loading={loading}>
+      <Loading loading={loading}>
         <List>
           {paginatedRecords.map(record => (
             <ListItem key={record.id} style={{ padding: '20px 0', borderBottom: '1px solid #f0f0f0' }}>
@@ -266,7 +266,7 @@ const LearningRecords = () => {
             </ListItem>
           ))}
         </List>
-      </Spin>
+      </Loading>
 
       {/* 分页 */}
       {filteredAndSortedRecords.length > 0 && (

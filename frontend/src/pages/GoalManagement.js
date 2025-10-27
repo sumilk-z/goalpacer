@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Dialog, Form, Input, Select, Tag, Space, MessagePlugin, Popconfirm, Spin } from 'tdesign-react';
+import { Table, Button, Dialog, Form, Input, Select, Tag, Space, MessagePlugin, Popconfirm, Loading } from 'tdesign-react';
 import { AddIcon, EditIcon, DeleteIcon } from 'tdesign-icons-react';
 import dayjs from 'dayjs';
 import { goalAPI } from '../services/api';
@@ -172,7 +172,7 @@ const GoalManagement = () => {
         </div>
       </div>
 
-      <Spin loading={loading}>
+      <Loading loading={loading}>
         <Table
           data={goals}
           columns={columns}
@@ -181,7 +181,7 @@ const GoalManagement = () => {
           hover
           stripe
         />
-      </Spin>
+      </Loading>
 
       <Dialog
         header={editingGoal ? '编辑目标' : '添加目标'}
