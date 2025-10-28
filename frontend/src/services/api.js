@@ -70,6 +70,9 @@ export const planAPI = {
   // 获取今日计划
   getToday: () => request('GET', '/plan/today'),
 
+  // 刷新今日计划（强制重新生成）
+  refreshToday: () => request('POST', '/plan/today/refresh'),
+
   // 获取指定日期计划
   getByDate: (date) => request('GET', `/plan?date=${date}`),
 

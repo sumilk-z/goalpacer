@@ -50,6 +50,7 @@ func main() {
 
 		// 计划
 		api.GET("/plan/today", getTodayPlan)
+		api.POST("/plan/today/refresh", refreshTodayPlan)  // 刷新今日计划
 		api.GET("/plan", getPlan)
 		api.POST("/plan", createPlan)
 		api.PUT("/plan/:id", updatePlan)

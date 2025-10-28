@@ -224,31 +224,70 @@ func createLog(c *gin.Context) {
 
 // ===== 计划 =====
 
-// getTodayPlan 获取今日计划
+// getTodayPlan 获取今日计划（使用LLM生成）
 func getTodayPlan(c *gin.Context) {
 	today := time.Now().Format("2006-01-02")
 
-	rows, err := db.Query(
-		"SELECT id, goal_id, plan_date, content, status, created_at, updated_at FROM plans WHERE plan_date=? ORDER BY created_at",
+	// 1. 先查询是否已有缓存的计划（24小时内）
+	var existingPlan Plan
+	err := db.QueryRow(
+		"SELECT id, goal_id, plan_date, content, status, created_at, updated_at FROM plans WHERE plan_date=? LIMIT 1",
 		today,
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "查询失败"})
+	).Scan(&existingPlan.ID, &existingPlan.GoalID, &existingPlan.PlanDate, &existingPlan.Content, &existingPlan.Status, &existingPlan.CreatedAt, &existingPlan.UpdatedAt)
+
+	if err == nil {
+		// 缓存命中，直接返回
+		log.Printf("✅ 使用缓存的计划")
+		c.JSON(http.StatusOK, Response{Code: 0, Message: "success", Data: existingPlan})
 		return
 	}
-	defer rows.Close()
 
-	var plans []Plan
-	for rows.Next() {
-		var plan Plan
-		if err := rows.Scan(&plan.ID, &plan.GoalID, &plan.PlanDate, &plan.Content, &plan.Status, &plan.CreatedAt, &plan.UpdatedAt); err != nil {
-			log.Printf("扫描行失败: %v", err)
-			continue
-		}
-		plans = append(plans, plan)
+	// 2. 缓存未命中，调用LLM生成计划
+	log.Printf("🔄 生成新的学习计划...")
+
+	// 构建Prompt
+	promptBuilder := NewPromptBuilder(db)
+	systemPrompt, userPrompt, err := promptBuilder.BuildPlanPrompt(today)
+	if err != nil {
+		log.Printf("❌ 构建Prompt失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "构建计划失败: " + err.Error()})
+		return
 	}
 
-	c.JSON(http.StatusOK, Response{Code: 0, Message: "success", Data: plans})
+	// 调用LLM
+	llmService := NewLLMService()
+	planContent, err := llmService.Generate(systemPrompt, userPrompt)
+	if err != nil {
+		log.Printf("❌ LLM生成计划失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "生成计划失败: " + err.Error()})
+		return
+	}
+
+	log.Printf("✅ LLM生成计划成功")
+
+	// 3. 保存计划到数据库
+	result, err := db.Exec(
+		"INSERT INTO plans (goal_id, plan_date, content, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+		1, today, planContent, "active", time.Now(), time.Now(),
+	)
+	if err != nil {
+		log.Printf("❌ 保存计划失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "保存计划失败: " + err.Error()})
+		return
+	}
+
+	lastID, _ := result.LastInsertId()
+	newPlan := Plan{
+		ID:        int(lastID),
+		GoalID:    1,
+		PlanDate:  today,
+		Content:   planContent,
+		Status:    "active",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	c.JSON(http.StatusOK, Response{Code: 0, Message: "success", Data: newPlan})
 }
 
 // getPlan 获取指定日期的计划
@@ -345,4 +384,63 @@ func deletePlan(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, Response{Code: 0, Message: "删除成功"})
+}
+
+// refreshTodayPlan 刷新今日计划（强制重新生成，忽略缓存）
+func refreshTodayPlan(c *gin.Context) {
+	today := time.Now().Format("2006-01-02")
+
+	log.Printf("🔄 刷新今日计划（强制重新生成）...")
+
+	// 1. 删除旧计划
+	_, err := db.Exec("DELETE FROM plans WHERE plan_date=?", today)
+	if err != nil {
+		log.Printf("❌ 删除旧计划失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "删除旧计划失败: " + err.Error()})
+		return
+	}
+
+	// 2. 构建Prompt
+	promptBuilder := NewPromptBuilder(db)
+	systemPrompt, userPrompt, err := promptBuilder.BuildPlanPrompt(today)
+	if err != nil {
+		log.Printf("❌ 构建Prompt失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "构建计划失败: " + err.Error()})
+		return
+	}
+
+	// 3. 调用LLM生成新计划
+	llmService := NewLLMService()
+	planContent, err := llmService.Generate(systemPrompt, userPrompt)
+	if err != nil {
+		log.Printf("❌ LLM生成计划失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "生成计划失败: " + err.Error()})
+		return
+	}
+
+	log.Printf("✅ LLM生成新计划成功")
+
+	// 4. 保存新计划到数据库
+	result, err := db.Exec(
+		"INSERT INTO plans (goal_id, plan_date, content, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+		1, today, planContent, "active", time.Now(), time.Now(),
+	)
+	if err != nil {
+		log.Printf("❌ 保存计划失败: %v", err)
+		c.JSON(http.StatusInternalServerError, Response{Code: 500, Message: "保存计划失败: " + err.Error()})
+		return
+	}
+
+	lastID, _ := result.LastInsertId()
+	newPlan := Plan{
+		ID:        int(lastID),
+		GoalID:    1,
+		PlanDate:  today,
+		Content:   planContent,
+		Status:    "active",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	c.JSON(http.StatusOK, Response{Code: 0, Message: "计划已刷新", Data: newPlan})
 }
