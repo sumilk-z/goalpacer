@@ -372,7 +372,7 @@ func updatePlan(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{Code: 0, Message: "更新成功"})
 }
 
-// deletePlan 删除计划
+// deletePlan 删除计划  改成软删？
 func deletePlan(c *gin.Context) {
 	id := c.Param("id")
 
