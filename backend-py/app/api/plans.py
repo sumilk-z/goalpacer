@@ -17,11 +17,10 @@ def create_plan(plan: PlanCreate, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/today", response_model=TodayPlanResponse)
+@router.get("/today", response_model=Response)
 def get_today_plan(db: Session = Depends(get_db)):
     """获取今日计划"""
-    # return Response(code=0, message="success", data=PlanService.get_today_plan(db))
-    return PlanService.get_today_plan(db)
+    return Response(code=0, message="success", data=PlanService.get_today_plan(db))
 
 @router.get("/", response_model=Response)
 def get_plans(

@@ -5,7 +5,7 @@ from app.models.plan import Plan
 from app.models.goal import Goal
 from app.models.time_rule import TimeRule
 from app.models.learning_log import LearningLog
-from app.schemas.plan import PlanCreate, PlanUpdate, TodayPlanResponse
+from app.schemas.plan import PlanCreate, PlanUpdate, PlanResponse
 from app.services.llm_service import LLMService
 
 class PlanService:
@@ -56,7 +56,7 @@ class PlanService:
         return False
     
     @staticmethod
-    def get_today_plan(db: Session) -> TodayPlanResponse:
+    def get_today_plan(db: Session) -> PlanResponse:
         """获取今日计划"""
         today = datetime.now().strftime("%Y-%m-%d")
         plans = db.query(Plan).filter(Plan.plan_date == today).all()
@@ -67,8 +67,18 @@ class PlanService:
             message = "今日计划已自动生成"
         else:
             message = "今日计划已存在"
-        
-        return TodayPlanResponse(plans=plans, message=message)
+        print(plans[0].content)
+        # return TodayPlanResponse(plans=plans, message=message)
+        #  @TODO 这里如果用户有多个 goal ，那么每个goal对应的plan 都要返回，前端不解析list，后续改一下
+        return PlanResponse(
+            id=plans[0].id,
+            goal_id=plans[0].goal_id,
+            plan_date=plans[0].plan_date,
+            content=plans[0].content,
+            status=plans[0].status,
+            created_at=plans[0].created_at,
+            updated_at=plans[0].updated_at,
+        )
     
     @staticmethod
     def generate_daily_plan(db: Session) -> List[Plan]:
