@@ -55,3 +55,9 @@ frontend/.cache/
 # Logs
 *.log
 logs/
+
+
+
+# python
+__pycache__/
+.venv/
